@@ -71,7 +71,7 @@ fun App(windowState: WindowState) {
 
 fun main() = application {
     val windowState = rememberWindowState()
-    Window(onCloseRequest = ::exitApplication, windowState) {
+    Window(onCloseRequest = ::exitApplication, windowState, title = "Minesweeper") {
         App(windowState)
     }
 }
