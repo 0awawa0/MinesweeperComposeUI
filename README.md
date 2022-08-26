@@ -7,3 +7,5 @@ The classic minesweeper game implemented with Compose Kotlin UI framework.
 ![Screenshot2](./screenshot2.png)
 
 ![screenshot3](./screenshot3.png)
+
+![screenshot4](./screenshot4.png)
