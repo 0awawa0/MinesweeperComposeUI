@@ -1,10 +1,17 @@
+package board
+
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlin.random.Random
 
 
 class BoardViewModel(width: Int, height: Int, val minesCount: Int) {
+
+    data class GameState(val isOver: Boolean = false, val isWon: Boolean = false, val board: List<List<Cell.CellState>>)
 
     data class Cell(
         val x: Int,
@@ -31,7 +38,17 @@ class BoardViewModel(width: Int, height: Int, val minesCount: Int) {
     }
 
     private val mines = HashSet<Pair<Int, Int>>()
-    private var gameOver = false
+    private val cellsToOpen = HashSet<Pair<Int, Int>>()
+
+    private val mGameOver = mutableStateOf(false)
+    val gameOver: State<Boolean>
+        get() = mGameOver
+
+    private val mWon = mutableStateOf(false)
+    val won: State<Boolean>
+        get() = mWon
+
+    private val viewModelScope = CoroutineScope(Dispatchers.Default)
 
     val boardState: List<List<State<Cell>>>
         get() = board.map { it.toList() }
@@ -39,12 +56,13 @@ class BoardViewModel(width: Int, height: Int, val minesCount: Int) {
     fun openCell(cell: Cell) {
         if (cell.visibility == Cell.CellVisibility.Open) return
         if (mines.isEmpty()) placeMines(cell)
-        if (gameOver) return
+        if (mGameOver.value) return
 
         val x = cell.x
         val y = cell.y
         if (cell.state == Cell.CellState.Mine) {
-            gameOver = true
+            mGameOver.value = true
+            mWon.value = false
             for (mine in mines) {
                 board[mine.first][mine.second].value = board[mine.first][mine.second].value.copy(
                     visibility = Cell.CellVisibility.Open
@@ -52,12 +70,16 @@ class BoardViewModel(width: Int, height: Int, val minesCount: Int) {
             }
         }
 
-        fun dfs(x: Int, y: Int) {
+        suspend fun dfs(x: Int, y: Int) {
             if (x < 0 || x > board.lastIndex) return
             if (y < 0 || y > board[x].lastIndex) return
             if (board[x][y].value.state == Cell.CellState.Mine) return
             if (board[x][y].value.visibility == Cell.CellVisibility.Open) return
+
+            delay(50)
             board[x][y].value = board[x][y].value.copy(visibility = Cell.CellVisibility.Open)
+            cellsToOpen.remove(x to y)
+
             if (board[x][y].value.state.value == 0) {
                 dfs(x - 1, y - 1)
                 dfs(x - 1, y)
@@ -70,7 +92,13 @@ class BoardViewModel(width: Int, height: Int, val minesCount: Int) {
             }
         }
 
-        dfs(x, y)
+        viewModelScope.launch {
+            dfs(x, y)
+            if (cellsToOpen.isEmpty()) {
+                mGameOver.value = true
+                mWon.value = true
+            }
+        }
     }
 
     fun markCell(cell: Cell) {
@@ -86,12 +114,14 @@ class BoardViewModel(width: Int, height: Int, val minesCount: Int) {
 
     fun resetBoard() {
         for (x in board.indices) {
-            for (y in board.indices) {
+            for (y in board[x].indices) {
                 board[x][y].value = Cell(x, y, Cell.CellState.Free(0), Cell.CellVisibility.Closed)
             }
         }
         mines.clear()
-        gameOver = false
+        cellsToOpen.clear()
+        mGameOver.value = false
+        mWon.value = false
     }
 
     private fun placeMines(ignore: Cell) {
@@ -111,6 +141,12 @@ class BoardViewModel(width: Int, height: Int, val minesCount: Int) {
             increaseMineCount(x + 1, y - 1)
             increaseMineCount(x + 1, y)
             increaseMineCount(x + 1, y + 1)
+        }
+
+        for (x in board.indices) {
+            for (y in board[x].indices) {
+                if (board[x][y].value.state != Cell.CellState.Mine) cellsToOpen.add(x to y)
+            }
         }
     }
 

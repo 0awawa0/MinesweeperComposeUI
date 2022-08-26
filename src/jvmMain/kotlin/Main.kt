@@ -7,6 +7,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.*
+import board.BoardView
+import board.BoardViewModel
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import theme.ApplicationTheme
@@ -44,27 +46,32 @@ fun App(windowState: WindowState) {
                 )
             } else {
                 BoardView(
+                    boardViewModel.gameOver.value,
+                    boardViewModel.won.value,
                     boardViewModel.boardState,
                     modifier = Modifier.fillMaxSize()
                         .align(Alignment.Center),
                     availableSize.value,
                     onOpenCell = boardViewModel::openCell,
                     onMarkCell = boardViewModel::markCell,
-                    onResetBoard = boardViewModel::resetBoard
+                    onResetBoard = boardViewModel::resetBoard,
+                    onBackToMenu = { viewModel.boardViewModel.value = null }
                 )
             }
 
-            VerticalScrollbar(
-                modifier = Modifier.align(Alignment.CenterEnd)
-                    .fillMaxHeight(),
-                adapter = rememberScrollbarAdapter(stateVertical)
-            )
-            HorizontalScrollbar(
-                modifier = Modifier.align(Alignment.BottomStart)
-                    .fillMaxWidth()
-                    .padding(end = 12.dp),
-                adapter = rememberScrollbarAdapter(stateHorizontal)
-            )
+            if (viewModel.boardViewModel.value == null) {
+                VerticalScrollbar(
+                    modifier = Modifier.align(Alignment.CenterEnd)
+                        .fillMaxHeight(),
+                    adapter = rememberScrollbarAdapter(stateVertical)
+                )
+                HorizontalScrollbar(
+                    modifier = Modifier.align(Alignment.BottomStart)
+                        .fillMaxWidth()
+                        .padding(end = 12.dp),
+                    adapter = rememberScrollbarAdapter(stateHorizontal)
+                )
+            }
         }
     }
 }

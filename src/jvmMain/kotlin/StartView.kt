@@ -46,6 +46,24 @@ fun StartView(modifier: Modifier, onStartGame: (Int, Int, Int) -> Unit) {
                 onClick = { onStartGame(30, 16, 99) }
             )
         }
+
+        Row {
+            GamePropertiesView(
+                30,
+                30,
+                120,
+                modifier = Modifier.padding(25.dp),
+                onClick = { onStartGame(30, 30, 120) }
+            )
+
+            GamePropertiesView(
+                20,
+                20,
+                40,
+                modifier = Modifier.padding(25.dp),
+                onClick = { onStartGame(20, 20, 40) }
+            )
+        }
     }
 }
 
