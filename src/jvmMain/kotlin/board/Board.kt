@@ -115,7 +115,10 @@ fun CellView(
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered = interactionSource.collectIsHoveredAsState()
     val color = animateColorAsState(when {
-        isOpen -> MaterialTheme.colors.onBackground
+        isOpen -> {
+            if (mines == -2) MaterialTheme.colors.error
+            else MaterialTheme.colors.onBackground
+        }
         isMarked -> MaterialTheme.colors.secondary
         else -> MaterialTheme.colors.primary
     })

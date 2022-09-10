@@ -26,6 +26,7 @@ class BoardViewModel(width: Int, height: Int, val minesCount: Int) {
         }
 
         sealed class CellState(val value: Int) {
+            object MineBlown: CellState(-2)
             object Mine: CellState(-1)
             class Free(value: Int): CellState(value)
         }
@@ -63,6 +64,7 @@ class BoardViewModel(width: Int, height: Int, val minesCount: Int) {
         if (cell.state == Cell.CellState.Mine) {
             mGameOver.value = true
             mWon.value = false
+            board[cell.x][cell.y].value = board[cell.x][cell.y].value.copy(state = Cell.CellState.MineBlown)
             for (mine in mines) {
                 board[mine.first][mine.second].value = board[mine.first][mine.second].value.copy(
                     visibility = Cell.CellVisibility.Open
