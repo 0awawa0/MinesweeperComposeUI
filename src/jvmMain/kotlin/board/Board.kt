@@ -5,7 +5,10 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Button
+import androidx.compose.material.Card
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
@@ -41,7 +44,7 @@ fun BoardView(
         minOf((availableSize.width - 30.dp) / board[0].size, (availableSize.height - 100.dp) / board.size)
     ))
 
-    Box(modifier.background(Color.Gray), contentAlignment = Alignment.Center){
+    Box(modifier.background(MaterialTheme.colors.background), contentAlignment = Alignment.Center) {
         Column(
             modifier,
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -110,26 +113,30 @@ fun CellView(
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered = interactionSource.collectIsHoveredAsState()
     val color = animateColorAsState(when {
-        isOpen -> Colors.openFieldBackground
-        isMarked -> Colors.markedFieldBackground
-        else -> Colors.closedFieldBackground
+        isOpen -> MaterialTheme.colors.onBackground
+        isMarked -> MaterialTheme.colors.secondary
+        else -> MaterialTheme.colors.primary
     })
 
     val textColor = Colors.numbersColors.getOrElse(mines) { Color.Black }
 
-    Box(
+    Card(
         modifier = modifier.mouseClickable {
             if (buttons.isSecondaryPressed) onRightClick()
-            else onLeftClick() }
-            .background(color.value)
-            .border(BorderStroke(0.5f.dp, Color.White))
-            .hoverable(interactionSource),
-        contentAlignment = Alignment.Center
+            else onLeftClick()
+        }.hoverable(interactionSource)
+            .padding(2.dp),
+        elevation = if (isHovered.value) 12.dp else 0.dp,
+        backgroundColor = color.value,
+        shape = RoundedCornerShape(10)
     ) {
-        if (isHovered.value) Box(modifier.background(Color(0xff, 0xff, 0xff, 0x20)))
-        if (isOpen) {
-            if (mines < 0) Text("*", fontWeight = FontWeight.Bold)
-            else if (mines > 0) Text(mines.toString(), fontWeight = FontWeight.Bold, color = textColor)
+        Box(contentAlignment = Alignment.Center){
+            if (isHovered.value) Box(modifier.background(Color(0xff, 0xff, 0xff, 0x20)))
+            if (isOpen) {
+                if (mines < 0) Text("*", fontWeight = FontWeight.Bold)
+                else if (mines > 0) Text(mines.toString(), fontWeight = FontWeight.Bold, color = textColor)
+            }
         }
+
     }
 }

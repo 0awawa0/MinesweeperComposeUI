@@ -10,10 +10,10 @@ object Colors {
         Color(255, 255, 255),
         Color(6, 118, 209),
         Color(39, 163, 43),
-        Color(209, 180, 33),
-        Color(209, 202, 6),
-        Color(209, 114, 6),
-        Color(209, 53, 6)
+        Orange400,
+        Orange600,
+        Red400,
+        Red600
     )
     val lostTextColor = Color(181, 56, 56)
     val wonTextColor = Color(62, 173, 83)

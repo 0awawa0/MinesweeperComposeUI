@@ -12,7 +12,7 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun StartView(modifier: Modifier, onStartGame: (Int, Int, Int) -> Unit) {
-    Column(modifier.background(Color.Gray), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+    Column(modifier.background(MaterialTheme.colors.background), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
         Row {
             GamePropertiesView(
                 5,
