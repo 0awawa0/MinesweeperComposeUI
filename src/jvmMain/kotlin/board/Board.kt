@@ -23,6 +23,8 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import theme.Colors
+import theme.Green400
+import theme.Green800
 
 
 @Composable
@@ -88,13 +90,13 @@ fun BoardView(
                 "Game over. You won!",
                 fontSize = 50.sp,
                 fontWeight = FontWeight.Bold,
-                color = Colors.wonTextColor
+                color = Green800
             )
             else Text(
                 "Game over. You lost :(",
                 fontSize = 50.sp,
                 fontWeight = FontWeight.Bold,
-                color = Colors.lostTextColor
+                color = MaterialTheme.colors.error
             )
         }
     }

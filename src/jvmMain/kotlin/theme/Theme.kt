@@ -12,7 +12,7 @@ private val ThemeColors = lightColors(
     secondary = Red400,
     background = Grey200,
     onBackground = Grey300,
-    onError = Red600
+    error = Red600
 )
 
 @Composable
