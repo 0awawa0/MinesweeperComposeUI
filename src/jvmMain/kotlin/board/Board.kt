@@ -17,13 +17,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.isSecondaryPressed
-import androidx.compose.ui.input.pointer.pointerMoveFilter
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import theme.Colors
-import theme.Green400
 import theme.Green800
 
 
@@ -33,26 +30,26 @@ fun BoardView(
     isWon: Boolean,
     board: List<List<State<BoardViewModel.Cell>>>,
     modifier: Modifier = Modifier,
-    availableSize: DpSize,
     onOpenCell: (BoardViewModel.Cell) -> Unit,
     onMarkCell: (BoardViewModel.Cell) -> Unit,
     onResetBoard: () -> Unit,
     onBackToMenu: () -> Unit
 ) {
 
-
-    val cellSize = maxOf(40.dp, minOf(
-        150.dp,
-        minOf((availableSize.width - 30.dp) / board[0].size, (availableSize.height - 100.dp) / board.size)
-    ))
+    val cellSize = 50.dp
+    val stateVertical = rememberScrollState(0)
+    val stateHorizontal = rememberScrollState(0)
 
     Box(modifier.background(MaterialTheme.colors.background), contentAlignment = Alignment.Center) {
         Column(
-            modifier,
+            Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Box(contentAlignment = Alignment.Center) {
+            Box(Modifier.fillMaxHeight(0.8f).verticalScroll(stateVertical)
+                .horizontalScroll(stateHorizontal),
+                contentAlignment = Alignment.Center
+            ) {
                 Column {
                     for (row in board) {
                         Row {

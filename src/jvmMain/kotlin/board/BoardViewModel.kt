@@ -2,10 +2,7 @@ package board
 
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import kotlin.random.Random
 
 
@@ -51,79 +48,84 @@ class BoardViewModel(width: Int, height: Int, val minesCount: Int) {
 
     private val viewModelScope = CoroutineScope(Dispatchers.Default)
 
-    val boardState: List<List<State<Cell>>>
-        get() = board.map { it.toList() }
+    val boardState: List<List<State<Cell>>> = board
 
     fun openCell(cell: Cell) {
-        if (cell.visibility == Cell.CellVisibility.Open) return
-        if (mines.isEmpty()) placeMines(cell)
-        if (mGameOver.value) return
-
-        val x = cell.x
-        val y = cell.y
-        if (cell.state == Cell.CellState.Mine) {
-            mGameOver.value = true
-            mWon.value = false
-            board[cell.x][cell.y].value = board[cell.x][cell.y].value.copy(state = Cell.CellState.MineBlown)
-            for (mine in mines) {
-                board[mine.first][mine.second].value = board[mine.first][mine.second].value.copy(
-                    visibility = Cell.CellVisibility.Open
-                )
-            }
-        }
-
-        suspend fun dfs(x: Int, y: Int) {
-            if (x < 0 || x > board.lastIndex) return
-            if (y < 0 || y > board[x].lastIndex) return
-            if (board[x][y].value.state == Cell.CellState.Mine) return
-            if (board[x][y].value.visibility == Cell.CellVisibility.Open) return
-
-            delay(50)
-            board[x][y].value = board[x][y].value.copy(visibility = Cell.CellVisibility.Open)
-            cellsToOpen.remove(x to y)
-
-            if (board[x][y].value.state.value == 0) {
-                dfs(x - 1, y - 1)
-                dfs(x - 1, y)
-                dfs(x - 1, y + 1)
-                dfs(x, y - 1)
-                dfs(x, y + 1)
-                dfs(x + 1, y - 1)
-                dfs(x + 1, y)
-                dfs(x + 1, y + 1)
-            }
-        }
-
         viewModelScope.launch {
-            dfs(x, y)
-            if (cellsToOpen.isEmpty()) {
+            if (cell.visibility == Cell.CellVisibility.Open) return@launch
+            if (mines.isEmpty()) placeMines(cell)
+            if (mGameOver.value) return@launch
+
+            val x = cell.x
+            val y = cell.y
+            if (cell.state == Cell.CellState.Mine) {
                 mGameOver.value = true
-                mWon.value = true
+                mWon.value = false
+                board[cell.x][cell.y].value = board[cell.x][cell.y].value.copy(state = Cell.CellState.MineBlown)
+                for (mine in mines) {
+                    board[mine.first][mine.second].value = board[mine.first][mine.second].value.copy(
+                        visibility = Cell.CellVisibility.Open
+                    )
+                }
+            }
+
+            suspend fun dfs(x: Int, y: Int) {
+                if (x < 0 || x > board.lastIndex) return
+                if (y < 0 || y > board[x].lastIndex) return
+                if (board[x][y].value.state == Cell.CellState.Mine) return
+                if (board[x][y].value.visibility == Cell.CellVisibility.Open) return
+
+                delay(50)
+                board[x][y].value = board[x][y].value.copy(visibility = Cell.CellVisibility.Open)
+                cellsToOpen.remove(x to y)
+
+                if (board[x][y].value.state.value == 0) {
+                    dfs(x - 1, y - 1)
+                    dfs(x - 1, y)
+                    dfs(x - 1, y + 1)
+                    dfs(x, y - 1)
+                    dfs(x, y + 1)
+                    dfs(x + 1, y - 1)
+                    dfs(x + 1, y)
+                    dfs(x + 1, y + 1)
+                }
+            }
+
+            viewModelScope.launch {
+                dfs(x, y)
+                if (cellsToOpen.isEmpty()) {
+                    mGameOver.value = true
+                    mWon.value = true
+                }
             }
         }
     }
 
     fun markCell(cell: Cell) {
-        val x = cell.x
-        val y = cell.y
-        val newVisibility = when(board[x][y].value.visibility) {
-            Cell.CellVisibility.Open -> Cell.CellVisibility.Open
-            Cell.CellVisibility.Closed -> Cell.CellVisibility.MarkMine
-            Cell.CellVisibility.MarkMine -> Cell.CellVisibility.Closed
+        viewModelScope.launch {
+            val x = cell.x
+            val y = cell.y
+            val newVisibility = when(board[x][y].value.visibility) {
+                Cell.CellVisibility.Open -> Cell.CellVisibility.Open
+                Cell.CellVisibility.Closed -> Cell.CellVisibility.MarkMine
+                Cell.CellVisibility.MarkMine -> Cell.CellVisibility.Closed
+            }
+            board[x][y].value = board[x][y].value.copy(visibility = newVisibility)
         }
-        board[x][y].value = board[x][y].value.copy(visibility = newVisibility)
     }
 
     fun resetBoard() {
-        for (x in board.indices) {
-            for (y in board[x].indices) {
-                board[x][y].value = Cell(x, y, Cell.CellState.Free(0), Cell.CellVisibility.Closed)
+        viewModelScope.launch {
+            for (x in board.indices) {
+                for (y in board[x].indices) {
+                    board[x][y].value = Cell(x, y, Cell.CellState.Free(0), Cell.CellVisibility.Closed)
+                }
             }
+            mines.clear()
+            cellsToOpen.clear()
+            mGameOver.value = false
+            mWon.value = false
         }
-        mines.clear()
-        cellsToOpen.clear()
-        mGameOver.value = false
-        mWon.value = false
     }
 
     private fun placeMines(ignore: Cell) {

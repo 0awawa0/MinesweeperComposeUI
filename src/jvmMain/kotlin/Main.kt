@@ -51,7 +51,6 @@ fun App(windowState: WindowState) {
                     boardViewModel.boardState,
                     modifier = Modifier.fillMaxSize()
                         .align(Alignment.Center),
-                    availableSize.value,
                     onOpenCell = boardViewModel::openCell,
                     onMarkCell = boardViewModel::markCell,
                     onResetBoard = boardViewModel::resetBoard,
