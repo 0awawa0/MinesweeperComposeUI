@@ -3,6 +3,7 @@ package board
 import androidx.compose.animation.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
@@ -26,6 +27,7 @@ import androidx.compose.ui.window.rememberWindowState
 import org.jetbrains.skia.Font
 import org.jetbrains.skia.Paint
 import org.jetbrains.skia.TextLine
+import theme.ApplicationTheme
 
 @Composable
 fun CanvasBoard(
@@ -34,22 +36,26 @@ fun CanvasBoard(
     squareSize: DpSize,
     squarePadding: Dp,
     availableSize: DpSize,
+    focusedColor: Color = MaterialTheme.colors.secondary,
+    unfocusedColor: Color = MaterialTheme.colors.primary,
     modifier: Modifier = Modifier
 ) {
 
     var shift by remember { mutableStateOf(Offset.Zero) }
     var pointerPosition by remember { mutableStateOf(Offset.Zero) }
+
     var focusedId by remember { mutableStateOf(-1) }
-    var previousFocusedId by remember { mutableStateOf(-1) }
-    val focusedColor = remember(focusedId) { Animatable(Color.Green) }
-    val previousFocusedColor = remember(previousFocusedId) { Animatable(Color.Red) }
+    var prevFocusedId by remember { mutableStateOf(-1) }
+
+    val animatedFocusedColor = remember(focusedId) { Animatable(unfocusedColor) }
+    val animatedUnfocusedColor = remember(prevFocusedId) { Animatable(focusedColor) }
 
     LaunchedEffect(focusedId) {
-        focusedColor.animateTo(targetValue = Color.Red, animationSpec = tween(2000))
+        animatedFocusedColor.animateTo(targetValue = focusedColor, animationSpec = tween(250))
     }
 
-    LaunchedEffect(previousFocusedId) {
-        previousFocusedColor.animateTo(targetValue = Color.Green, animationSpec = tween(2000))
+    LaunchedEffect(prevFocusedId) {
+        animatedUnfocusedColor.animateTo(targetValue = unfocusedColor, animationSpec = tween(250))
     }
 
     val requiredWidth = (squareSize.width + squarePadding).value * rows + squarePadding.value
@@ -79,8 +85,9 @@ fun CanvasBoard(
                 shift = Offset(shiftX, shiftY)
             }
         }
+        .background(MaterialTheme.colors.background)
     ) {
-        var willRedraw = false
+        var newFocusedId = -1
         for (row in 0 until rows) {
             val offsetY = squarePadding.value * (row + 1) + squareSize.height.value * row + shift.y
             if (offsetY > actualWindowHeight) break
@@ -89,35 +96,20 @@ fun CanvasBoard(
                 val offsetX = squarePadding.value * (col + 1) + squareSize.width.value * col + shift.x
                 if (offsetX > actualWindowWidth) break
                 if (offsetX + squareSize.width.value < 0) continue
-                val pointerWithinSquare = run {
-                    val xWithinBorder = pointerPosition.x >= offsetX && pointerPosition.x <= offsetX + squareSize.width.value
-                    val yWithinBorder = pointerPosition.y >= offsetY && pointerPosition.y <= offsetY + squareSize.height.value
-                    return@run xWithinBorder && yWithinBorder
-                }
+                val xWithinBorder =
+                    pointerPosition.x >= offsetX && pointerPosition.x <= offsetX + squareSize.width.value
+                val yWithinBorder =
+                    pointerPosition.y >= offsetY && pointerPosition.y <= offsetY + squareSize.height.value
+                val pointerWithinSquare = xWithinBorder && yWithinBorder
 
+                val squareId = row * columns + col
 
-                val squareValue = row * columns + col
+                if (pointerWithinSquare) newFocusedId = squareId
 
-                if (pointerWithinSquare && focusedId != squareValue) {
-                    previousFocusedId = focusedId
-                    focusedId = squareValue
-                    willRedraw = true
-                }
-
-                if (!pointerWithinSquare && focusedId == squareValue) {
-                    previousFocusedId = focusedId
-                    focusedId = -1
-                    willRedraw = true
-                }
-
-                val squareColor = if (willRedraw) {
-                    if (focusedId == squareValue) Color.Green
-                    else if (previousFocusedId == squareValue) Color.Red
-                    else Color.Green
-                } else {
-                    if (focusedId == squareValue) focusedColor.value
-                    else if (previousFocusedId == squareValue) previousFocusedColor.value
-                    else Color.Green
+                val squareColor = when (squareId) {
+                    focusedId -> animatedFocusedColor.value
+                    prevFocusedId -> animatedUnfocusedColor.value
+                    else -> unfocusedColor
                 }
 
                 drawRoundRect(
@@ -132,13 +124,18 @@ fun CanvasBoard(
 
                 drawContext.canvas.nativeCanvas.apply {
                     drawTextLine(
-                        TextLine.make(squareValue.toString(), Font()),
+                        TextLine.make(squareId.toString(), Font()),
                         offsetX + squareSize.width.value / 2,
                         offsetY + squareSize.height.value / 2,
                         Paint()
                     )
                 }
             }
+        }
+
+        if (newFocusedId != focusedId) {
+            if (focusedId != -1) prevFocusedId = focusedId
+            focusedId = newFocusedId
         }
     }
 }
@@ -147,7 +144,7 @@ fun CanvasBoard(
 fun main() = application {
     val windowState = rememberWindowState()
     Window(onCloseRequest = ::exitApplication, state = windowState) {
-        MaterialTheme {
+        ApplicationTheme {
             CanvasBoard(
                 100_000,
                 100_000,
